@@ -61,9 +61,19 @@ class Zombie extends Enemy {
 	getImage() { return tile_zombie; }
 }
 
-class Idk implements Tile {
+class UpgradeStation implements Tile {
 	getImage() { return tile_idk; }
-	isSolid() { return true }
+	isSolid() { return false }
+}
+
+class Fireplace implements Tile {
+	getImage() { return tile_fireplace; }
+	isSolid() { return false }
+}
+
+class Door implements Tile {
+	getImage() { return tile_door; }
+	isSolid() { return false }
 }
 
 class Air implements Tile {
@@ -72,21 +82,77 @@ class Air implements Tile {
 }
 
 class Map {
+	tiles : Tile[][];
+	width : number;
+	name : string;
+
+	//isSolidAt(x:number) : bool;
+	isSolidAt(x:number) {
+		for(var i = 0; i < this.tiles[x].length; i++) {
+			if(this.tiles[x][i].isSolid())
+				return true;
+		}
+		return false;
+	}
+
+	tileAt(x:number) {
+		return this.tiles[x][0];
+	}
+
+	pushTile(x:number, t:Tile) {
+		this.tiles[x].unshift(t);
+	}
+
+	popTile(x:number) {
+		return this.tiles[x].shift();
+	}
+}
+
+class MapOne extends Map {
+	constructor() {
+		super();
+		this.name = "map1";
+		var map = "   $  %   $ $ %   $  ";
+		this.tiles = emptyTiles(map.length);
+		for(var i = 0; i < map.length; i++) {
+			if(map[i] == '$') this.pushTile(i, new Zombie());
+			else if(map[i] == '%') this.pushTile(i, new UpgradeStation());
+		}
+		this.width = map.length;
+	}
+}
+
+function emptyTiles(width:number) {
+	var tiles : Tile[][] = [];
+	for(var i = 0; i < width; i++)
+		tiles[i] = [new Air()];
+	return tiles;
+}
+
+class Home extends Map {
+	constructor() {
+		super();
+		this.name = "home";
+		var map = "   F  U  D  ";
+		this.tiles = emptyTiles(map.length);
+		for(var i = 0; i < map.length; i++) {
+			if(map[i] == 'F') this.pushTile(i, new Fireplace());
+			else if(map[i] == 'U') this.pushTile(i, new UpgradeStation());
+			else if(map[i] == 'D') this.pushTile(i, new Door());
+		}
+		this.width = map.length;
+	}
+}
+
+/*class Map {
 	tiles : Tile[];
 	width : number;
 
-	constructor() {
-		this.tiles = [];
-
-		var map = "   $  %   $ $ %   $  ";
-		for(var i = 0; i < map.length; i++) {
-			if(map[i] == '$') this.tiles.push(new Zombie());
-			else if(map[i] == '%') this.tiles.push(new Idk());
-			else this.tiles.push(new Air());
-		}
+	constructor(builder:MapBuilder) {
+		this.tiles = builder.build();
 		this.width = this.tiles.length;
 	}
-}
+}*/
 
 class Camera {
 	x : number = 0;
@@ -101,12 +167,16 @@ class Player {
 }
 
 var player = new Player();
-var map = new Map();
+var _home = new Home();
+var _mapone = new MapOne();
+var map = _home;
 var camera = new Camera();
 var tile_top : heart.HeartImage = null;
 var tile_zombie : heart.HeartImage = null;
 var tile_wall : heart.HeartImage = null;
 var tile_idk : heart.HeartImage = null;
+var tile_fireplace : heart.HeartImage = null;
+var tile_door : heart.HeartImage = null;
 
 var SCREEN_WIDTH, SCREEN_HEIGHT, TILE_WIDTH, TILE_HEIGHT;
 
@@ -114,8 +184,10 @@ heart.preload = function() {
 	heart.graphics.newImage("assets/player.png", function(r) { player.img = r; TILE_WIDTH = r.img.width; TILE_HEIGHT = r.img.height; });
 	heart.graphics.newImage("assets/top.png", function(r) { tile_top = r; });
 	heart.graphics.newImage("assets/wall3.png", function(r) { tile_wall = r; });
-	heart.graphics.newImage("assets/idk.png", function(r) { tile_idk = r; });
+	heart.graphics.newImage("assets/ankh1.png", function(r) { tile_idk = r; });
 	heart.graphics.newImage("assets/zombie.png", function(r) { tile_zombie = r; });
+	heart.graphics.newImage("assets/fire1.png", function(r) { tile_fireplace = r; });
+	heart.graphics.newImage("assets/door.png", function(r) { tile_door = r; });
 }
 
 heart.load = function() {
@@ -130,19 +202,29 @@ function center() {
 	camera.x = player.x*TILE_WIDTH - SCREEN_WIDTH/2;
 }
 
+function loadmap(mapobj) {
+	player.x = 0;
+	map = mapobj;
+	center();
+}
+
 heart.keydown = function(c) {
 	if(c == "right") {
-		player.x++;
-		center();
+		if(player.x+1 < map.width && !map.isSolidAt(player.x+1)) {
+			player.x++;
+			center();
+		}
 	}
 	else if(c == "left") {
-		player.x--;
-		center();
+		if(player.x-1 >= 0 && !map.isSolidAt(player.x-1)) {
+			player.x--;
+			center();
+		}
 	}
 	else if(c == " ") {
 		for(var i = player.x; i < map.width; i++) {
-			if(map.tiles[i] instanceof Enemy) {
-				var e = <Enemy> map.tiles[i];
+			if(map.tileAt(i) instanceof Enemy) {
+				var e = <Enemy> map.tileAt(i);
 				if(!e.alive) continue;
 
 				//map.tiles[i] = new Air(); // obliterated!
@@ -151,15 +233,27 @@ heart.keydown = function(c) {
 			}
 		}
 	}
+	else if(c == "up") {
+		if(map.tileAt(player.x) instanceof UpgradeStation) {
+			console.log("upgrade...");
+		}
+		else if(map.tileAt(player.x) instanceof Door) {
+			if(map.name == "home") {
+				loadmap(_mapone);
+			}
+			else {
+				loadmap(_home);
+			}
+		}
+	}
 
 	for(var i = 0; i < map.width; i++) {
-		if(map.tiles[i] instanceof Zombie && i > 0 && !map.tiles[i-1].isSolid() && player.x != i-1) {
-			var e = <Enemy> map.tiles[i];
+		if(map.tiles[i][0] instanceof Zombie && i > 0 && !map.tiles[i-1][0].isSolid() && player.x != i-1) {
+			var e = <Enemy> map.tiles[i][0];
 			if(!e.alive) continue;
 			
-			var t = map.tiles[i-1];
-			map.tiles[i-1] = map.tiles[i];
-			map.tiles[i] = t;
+			map.pushTile(i-1, map.tiles[i][0]);
+			map.popTile(i);
 		}
 	}
 }
@@ -183,8 +277,9 @@ heart.draw = function() {
 			heart.graphics.draw(map.tiles[i].getImage(), camera.get(i*TILE_WIDTH), BASE_Y+TILE_HEIGHT);
 		else
 			heart.graphics.draw(tile_wall, camera.get(i*TILE_WIDTH), BASE_Y+TILE_HEIGHT);*/
-		if(map.tiles[i] instanceof Enemy) {
-			var e = <Enemy> map.tiles[i];
+		var t = map.tileAt(i);
+		if(t instanceof Enemy) {
+			var e = <Enemy> t;
 			if(!e.alive) {
 				heart.graphics.push();
 				var pos = {x: camera.get(i*TILE_WIDTH), y: BASE_Y+TILE_HEIGHT};
@@ -200,7 +295,7 @@ heart.draw = function() {
 			}
 		}
 		else {
-			heart.graphics.draw(map.tiles[i].getImage(), camera.get(i*TILE_WIDTH), BASE_Y+TILE_HEIGHT);
+			heart.graphics.draw(t.getImage(), camera.get(i*TILE_WIDTH), BASE_Y+TILE_HEIGHT);
 		}
 	}
 

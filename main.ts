@@ -209,6 +209,16 @@ function loadmap(mapobj) {
 }
 
 heart.keydown = function(c) {
+	for(var i = 0; i < map.width; i++) {
+		if(map.tiles[i][0] instanceof Zombie && i > 0 && !map.tiles[i-1][0].isSolid() && player.x != i-1) {
+			var e = <Enemy> map.tiles[i][0];
+			if(!e.alive) continue;
+			
+			map.pushTile(i-1, map.tiles[i][0]);
+			map.popTile(i);
+		}
+	}
+
 	if(c == "right") {
 		if(player.x+1 < map.width && !map.isSolidAt(player.x+1)) {
 			player.x++;
@@ -244,16 +254,6 @@ heart.keydown = function(c) {
 			else {
 				loadmap(_home);
 			}
-		}
-	}
-
-	for(var i = 0; i < map.width; i++) {
-		if(map.tiles[i][0] instanceof Zombie && i > 0 && !map.tiles[i-1][0].isSolid() && player.x != i-1) {
-			var e = <Enemy> map.tiles[i][0];
-			if(!e.alive) continue;
-			
-			map.pushTile(i-1, map.tiles[i][0]);
-			map.popTile(i);
 		}
 	}
 }

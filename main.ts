@@ -13,6 +13,8 @@ declare module heart {
 
 	export class HeartImage {
 		img : HTMLImageElement;
+		getWidth() : number;
+		getHeight() : number;
 	}
 
 	// submodules
@@ -24,6 +26,10 @@ declare module heart {
 		export function newImage(path:string, callback : (result:HeartImage) => void);
 		export function getWidth() : number;
 		export function getHeight() : number;
+		export function push() : void;
+		export function pop() : void;
+		export function translate(x:number, y:number) : void;
+		export function rotate(angle:number) : void;
 	}
 
 	export module timer {
@@ -36,24 +42,33 @@ declare module heart {
 
 interface Tile {
 	getImage() : heart.HeartImage;
+	isSolid() : bool;
 }
 
 class Wall implements Tile {
-	getImage() {
-		return tile_top;
-	}
+	getImage() { return tile_top; }
+	isSolid() { return true; }
 }
 
-class Zombie implements Tile {
-	getImage() {
-		return tile_zombie;
-	}
+class Enemy implements Tile {
+	alive : bool = true;
+
+	getImage() : heart.HeartImage { return null; }
+	isSolid() { return this.alive }
+}
+
+class Zombie extends Enemy {
+	getImage() { return tile_zombie; }
 }
 
 class Idk implements Tile {
-	getImage() {
-		return tile_idk;
-	}
+	getImage() { return tile_idk; }
+	isSolid() { return true }
+}
+
+class Air implements Tile {
+	getImage() : heart.HeartImage { return tile_wall; }
+	isSolid() { return false }
 }
 
 class Map {
@@ -63,11 +78,11 @@ class Map {
 	constructor() {
 		this.tiles = [];
 
-		var map = "   $  %   $  %   $  ";
+		var map = "   $  %   $ $ %   $  ";
 		for(var i = 0; i < map.length; i++) {
 			if(map[i] == '$') this.tiles.push(new Zombie());
 			else if(map[i] == '%') this.tiles.push(new Idk());
-			else this.tiles.push(null);
+			else this.tiles.push(new Air());
 		}
 		this.width = this.tiles.length;
 	}
@@ -126,15 +141,22 @@ heart.keydown = function(c) {
 	}
 	else if(c == " ") {
 		for(var i = player.x; i < map.width; i++) {
-			if(map.tiles[i] instanceof Zombie) {
-				map.tiles[i] = null; // obliterated!
+			if(map.tiles[i] instanceof Enemy) {
+				var e = <Enemy> map.tiles[i];
+				if(!e.alive) continue;
+
+				//map.tiles[i] = new Air(); // obliterated!
+				e.alive = false;
 				break;
 			}
 		}
 	}
 
 	for(var i = 0; i < map.width; i++) {
-		if(map.tiles[i] instanceof Zombie && i > 0 && map.tiles[i-1] == null && player.x != i-1) {
+		if(map.tiles[i] instanceof Zombie && i > 0 && !map.tiles[i-1].isSolid() && player.x != i-1) {
+			var e = <Enemy> map.tiles[i];
+			if(!e.alive) continue;
+			
 			var t = map.tiles[i-1];
 			map.tiles[i-1] = map.tiles[i];
 			map.tiles[i] = t;
@@ -157,10 +179,29 @@ heart.draw = function() {
 	}
 
 	for(var i = 0; i < map.width; i++) {
-		if(map.tiles[i] != null)
+		/*if(map.tiles[i].getImage() != null)
 			heart.graphics.draw(map.tiles[i].getImage(), camera.get(i*TILE_WIDTH), BASE_Y+TILE_HEIGHT);
 		else
-			heart.graphics.draw(tile_wall, camera.get(i*TILE_WIDTH), BASE_Y+TILE_HEIGHT);
+			heart.graphics.draw(tile_wall, camera.get(i*TILE_WIDTH), BASE_Y+TILE_HEIGHT);*/
+		if(map.tiles[i] instanceof Enemy) {
+			var e = <Enemy> map.tiles[i];
+			if(!e.alive) {
+				heart.graphics.push();
+				var pos = {x: camera.get(i*TILE_WIDTH), y: BASE_Y+TILE_HEIGHT};
+				var hw = e.getImage().getWidth()/2;
+				var hh = e.getImage().getHeight()/2;
+				heart.graphics.translate(pos.x+hw, pos.y+hh);
+				heart.graphics.rotate(90 * Math.PI/180);
+				heart.graphics.draw(e.getImage(), -hw, -hh);
+				heart.graphics.pop();
+			}
+			else {
+				heart.graphics.draw(e.getImage(), camera.get(i*TILE_WIDTH), BASE_Y+TILE_HEIGHT);
+			}
+		}
+		else {
+			heart.graphics.draw(map.tiles[i].getImage(), camera.get(i*TILE_WIDTH), BASE_Y+TILE_HEIGHT);
+		}
 	}
 
 	heart.graphics.draw(player.img, camera.get(player.x*TILE_WIDTH), BASE_Y + TILE_HEIGHT);

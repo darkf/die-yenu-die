@@ -50,11 +50,26 @@ class Wall implements Tile {
 	isSolid() { return true; }
 }
 
-class Enemy implements Tile {
+class Actor implements Tile {
+	health : number = 100;
 	alive : bool = true;
+	weapon : Weapon = new RustySword();
 
-	getImage() : heart.HeartImage { return null; }
 	isSolid() { return this.alive }
+	getImage() : heart.HeartImage { return null }
+
+	damage(amount:number) {
+		this.health -= amount;
+		if(this.health <= 0) {
+			this.alive = false;
+		}
+	}
+}
+
+class Enemy extends Actor {
+	constructor() {
+		super();
+	}
 }
 
 class Zombie extends Enemy {
@@ -161,9 +176,34 @@ class Camera {
 	}
 }
 
-class Player {
+class Weapon {
+	name : string;
+	range : number = 1;
+	baseDamage : number;
+	getAttackDamage() {
+		return this.baseDamage
+	}
+}
+
+class RustySword extends Weapon {
+	constructor() {
+		super();
+		this.name = "Rusty Sword";
+		this.baseDamage = 50;
+	}
+}
+
+class Player extends Actor {
 	x : number = 0;
 	img : heart.HeartImage = null;
+
+	constructor() {
+		super();
+	}
+}
+
+function distance(x1:number, x2:number) {
+	return Math.abs(x1-x2);
 }
 
 var player = new Player();
@@ -237,9 +277,10 @@ heart.keydown = function(c) {
 				var e = <Enemy> map.tileAt(i);
 				if(!e.alive) continue;
 
-				//map.tiles[i] = new Air(); // obliterated!
-				e.alive = false;
-				break;
+				if(distance(i, player.x) <= player.weapon.range) {
+					e.damage(player.weapon.getAttackDamage());
+					break;
+				}
 			}
 		}
 	}

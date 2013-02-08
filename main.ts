@@ -214,12 +214,25 @@ class Slash extends Spell {
 	getEffectImage() { return effect_slash }
 }
 
+class Fireball extends Spell {
+	constructor() {
+		super();
+		this.name = "Fireball";
+		this.type = "fire";
+		this.range = 3;
+		this.baseDamage = 100;
+	}
+
+	getEffectImage() { return effect_fire }
+}
+
 class Player extends Actor {
 	x : number = 0;
 	img : heart.HeartImage = null;
 
 	constructor() {
 		super();
+		this.spell = new Fireball();
 	}
 }
 
@@ -239,6 +252,7 @@ var tile_idk : heart.HeartImage = null;
 var tile_fireplace : heart.HeartImage = null;
 var tile_door : heart.HeartImage = null;
 var effect_slash : heart.HeartImage = null;
+var effect_fire : heart.HeartImage = null;
 
 var SCREEN_WIDTH, SCREEN_HEIGHT, TILE_WIDTH, TILE_HEIGHT;
 
@@ -251,6 +265,7 @@ heart.preload = function() {
 	heart.graphics.newImage("assets/fire1.png", function(r) { tile_fireplace = r; });
 	heart.graphics.newImage("assets/door.png", function(r) { tile_door = r; });
 	heart.graphics.newImage("assets/slashdamage.png", function(r) { effect_slash = r; });
+	heart.graphics.newImage("assets/firedamage.png", function(r) { effect_fire = r; });
 }
 
 heart.load = function() {

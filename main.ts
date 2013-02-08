@@ -53,7 +53,7 @@ class Wall implements Tile {
 class Actor implements Tile {
 	health : number = 100;
 	alive : bool = true;
-	weapon : Weapon = new RustySword();
+	spell : Spell = new Slash();
 	effectImg : heart.HeartImage = null;
 
 	isSolid() { return this.alive }
@@ -72,10 +72,10 @@ class Actor implements Tile {
 	}
 
 	attacked(attacker:Actor) {
-		this.damage(attacker.weapon.getAttackDamage());
-		if(attacker.weapon.type == "blade") {
-			this.effectImg = effect_slash;
-		}
+		this.damage(attacker.spell.getAttackDamage());
+		var ef = attacker.spell.getEffectImage();
+		if(ef)
+			this.effectImg = ef;
 	}
 }
 
@@ -189,22 +189,29 @@ class Camera {
 	}
 }
 
-class Weapon {
+class Spell {
 	name : string;
-	type : string = "blade";
+	type : string;
 	range : number = 1;
 	baseDamage : number;
+	
+	getEffectImage() : heart.HeartImage { return null }
+
 	getAttackDamage() {
 		return this.baseDamage
 	}
 }
 
-class RustySword extends Weapon {
+class Slash extends Spell {
 	constructor() {
 		super();
-		this.name = "Rusty Sword";
+		this.name = "Slash";
+		this.type = "blade";
+		this.range = 2;
 		this.baseDamage = 50;
 	}
+
+	getEffectImage() { return effect_slash }
 }
 
 class Player extends Actor {
@@ -302,7 +309,7 @@ heart.keydown = function(c) {
 				var e = <Enemy> map.tileAt(i);
 				if(!e.alive) continue;
 
-				if(distance(i, player.x) <= player.weapon.range) {
+				if(distance(i, player.x) <= player.spell.range) {
 					e.attacked(player);
 					break;
 				}

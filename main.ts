@@ -330,11 +330,14 @@ function loadmap(mapobj) {
 }
 
 function turn() {
+	player.turn();
+	
 	for(var i = 0; i < map.width; i++) {
 		var t = map.tiles[i][0];
 
 		if(t instanceof Actor) (<Actor>t).turn();
 	}
+
 }
 
 heart.keydown = function(c) {

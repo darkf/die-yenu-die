@@ -321,6 +321,7 @@ function turn() {
 }
 
 heart.keydown = function(c) {
+	if(!player.alive) return;
 	turn();
 
 	if(c == "right") {

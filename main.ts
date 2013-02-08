@@ -51,14 +51,25 @@ class Wall implements Tile {
 }
 
 class Actor implements Tile {
+	x : number;
 	health : number = 100;
 	alive : bool = true;
 	spell : Spell = new Slash();
 	effectImg : heart.HeartImage = null;
 
+	constructor(x:number) {
+		this.x = x;
+	}
+
 	isSolid() { return this.alive }
 	getImage() : heart.HeartImage { return null }
 	getEffectImage() : heart.HeartImage { return this.effectImg }
+
+	move(to:number) {
+		map.pushTile(to, this);
+		map.removeTile(this.x, this);
+		this.x = to;
+	}
 
 	turn() {
 		this.effectImg = null;
@@ -80,8 +91,23 @@ class Actor implements Tile {
 }
 
 class Enemy extends Actor {
-	constructor() {
-		super();
+	constructor(x:number) {
+		super(x);
+	}
+
+	turn() {
+		super.turn();
+		if(!this.alive) return;
+
+		// move enemies left towards player
+		if(this.x > 0 && !map.tiles[this.x-1][0].isSolid() && player.x != this.x-1) {
+			this.move(this.x-1);
+		}
+
+		// see if we can attack the player
+		if(distance(this.x-1, player.x) <= this.spell.range) {
+				player.attacked(this);
+		}
 	}
 }
 
@@ -134,6 +160,15 @@ class Map {
 	popTile(x:number) {
 		return this.tiles[x].shift();
 	}
+
+	removeTile(x:number, tile:Tile) {
+		var i = this.tiles[x].indexOf(tile);
+		if(i == -1) {
+			console.log("error: no tile");
+			return;
+		}
+		this.tiles[x].splice(i, 1);
+	}
 }
 
 class MapOne extends Map {
@@ -143,7 +178,7 @@ class MapOne extends Map {
 		var map = "   $  %   $ $ %   $  ";
 		this.tiles = emptyTiles(map.length);
 		for(var i = 0; i < map.length; i++) {
-			if(map[i] == '$') this.pushTile(i, new Zombie());
+			if(map[i] == '$') this.pushTile(i, new Zombie(i));
 			else if(map[i] == '%') this.pushTile(i, new UpgradeStation());
 		}
 		this.width = map.length;
@@ -207,7 +242,7 @@ class Slash extends Spell {
 		super();
 		this.name = "Slash";
 		this.type = "blade";
-		this.range = 2;
+		this.range = 1;
 		this.baseDamage = 50;
 	}
 
@@ -231,8 +266,16 @@ class Player extends Actor {
 	img : heart.HeartImage = null;
 
 	constructor() {
-		super();
+		super(0);
 		this.spell = new Fireball();
+	}
+
+	damage(amount:number) {
+		super.damage(amount);
+		console.log("You take " + amount + " damage");
+		if(!this.alive) {
+			console.log("You are dead...");
+		}
 	}
 }
 
@@ -291,15 +334,6 @@ function turn() {
 		var t = map.tiles[i][0];
 
 		if(t instanceof Actor) (<Actor>t).turn();
-
-		// move enemies left towards player
-		if(t instanceof Enemy && i > 0 && !map.tiles[i-1][0].isSolid() && player.x != i-1) {
-			var e = <Enemy> t;
-			if(!e.alive) continue;
-			
-			map.pushTile(i-1, t);
-			map.popTile(i);
-		}
 	}
 }
 
@@ -396,6 +430,10 @@ heart.draw = function() {
 	}
 
 	heart.graphics.draw(player.img, camera.get(player.x*TILE_WIDTH), BASE_Y + TILE_HEIGHT);
+	var ef = player.getEffectImage();
+	if(ef) {
+		heart.graphics.draw(ef, camera.get(player.x*TILE_WIDTH), BASE_Y + TILE_HEIGHT);
+	}
 
 	// todo: lighting
 	/*

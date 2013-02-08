@@ -19,7 +19,7 @@ declare module heart {
 
 	// submodules
 	export module graphics {
-		export function setColor(r:number, g:number, b:number) : void;
+		export function setColor(r:number, g:number, b:number, a?:number) : void;
 		export function rectangle(mode:string, x:number, y:number, w:number, h:number) : void;
 		export function print(msg:string, x:number, y:number) : void;
 		export function draw(drawable:HeartImage, x:number, y:number) : void;
@@ -248,6 +248,8 @@ class Player extends Actor {
 		this.spell = new Fireball();
 	}
 
+	getImage() { return this.img }
+
 	damage(amount:number) {
 		super.damage(amount);
 		console.log("You take " + amount + " damage");
@@ -365,6 +367,31 @@ heart.update = function(dt) {
 	//player.x += player.speed * dt;
 }
 
+function drawActor(e:Actor, y:number) {
+	if(!e.alive) {
+		heart.graphics.push();
+		var pos = {x: camera.get(e.x*TILE_WIDTH), y: y+TILE_HEIGHT};
+		var hw = e.getImage().getWidth()/2;
+		var hh = e.getImage().getHeight()/2;
+		heart.graphics.translate(pos.x+hw, pos.y+hh);
+		heart.graphics.rotate(90 * Math.PI/180);
+		heart.graphics.draw(e.getImage(), -hw, -hh);
+		var ef = e.getEffectImage();
+		if(ef)
+			heart.graphics.draw(ef, -hw, -hh);
+		// apply slight red tint
+		heart.graphics.setColor(255, 0, 0, 50);
+		heart.graphics.rectangle("fill", -hw, -hh, TILE_WIDTH, TILE_HEIGHT);
+		heart.graphics.pop();
+	}
+	else {
+		heart.graphics.draw(e.getImage(), camera.get(e.x*TILE_WIDTH), y+TILE_HEIGHT);
+		var ef = e.getEffectImage();
+		if(ef)
+			heart.graphics.draw(ef, camera.get(e.x*TILE_WIDTH), y+TILE_HEIGHT);
+	}
+}
+
 heart.draw = function() {
 	//heart.graphics.setColor(255, 255, 255)
 	//heart.graphics.rectangle("fill", player.x, player.y, 100, 100);
@@ -381,40 +408,13 @@ heart.draw = function() {
 		else
 			heart.graphics.draw(tile_wall, camera.get(i*TILE_WIDTH), BASE_Y+TILE_HEIGHT);*/
 		var t = map.tileAt(i);
-		if(t instanceof Enemy) {
-			var e = <Enemy> t;
-			if(!e.alive) {
-				heart.graphics.push();
-				var pos = {x: camera.get(i*TILE_WIDTH), y: BASE_Y+TILE_HEIGHT};
-				var hw = e.getImage().getWidth()/2;
-				var hh = e.getImage().getHeight()/2;
-				heart.graphics.translate(pos.x+hw, pos.y+hh);
-				heart.graphics.rotate(90 * Math.PI/180);
-				heart.graphics.draw(e.getImage(), -hw, -hh);
-				var ef = e.getEffectImage();
-				if(ef) {
-					heart.graphics.draw(ef, -hw, -hh);
-				}
-				heart.graphics.pop();
-			}
-			else {
-				heart.graphics.draw(e.getImage(), camera.get(i*TILE_WIDTH), BASE_Y+TILE_HEIGHT);
-				var ef = e.getEffectImage();
-				if(ef) {
-					heart.graphics.draw(ef, camera.get(i*TILE_WIDTH), BASE_Y+TILE_HEIGHT);
-				}
-			}
-		}
-		else {
+		if(t instanceof Actor)
+			drawActor(<Actor>t, BASE_Y);
+		else
 			heart.graphics.draw(t.getImage(), camera.get(i*TILE_WIDTH), BASE_Y+TILE_HEIGHT);
-		}
 	}
 
-	heart.graphics.draw(player.img, camera.get(player.x*TILE_WIDTH), BASE_Y + TILE_HEIGHT);
-	var ef = player.getEffectImage();
-	if(ef) {
-		heart.graphics.draw(ef, camera.get(player.x*TILE_WIDTH), BASE_Y + TILE_HEIGHT);
-	}
+	drawActor(player, BASE_Y);
 
 	// todo: lighting
 	/*

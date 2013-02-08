@@ -54,14 +54,27 @@ class Actor implements Tile {
 	health : number = 100;
 	alive : bool = true;
 	weapon : Weapon = new RustySword();
+	effectImg : heart.HeartImage = null;
 
 	isSolid() { return this.alive }
 	getImage() : heart.HeartImage { return null }
+	getEffectImage() : heart.HeartImage { return this.effectImg }
+
+	turn() {
+		this.effectImg = null;
+	}
 
 	damage(amount:number) {
 		this.health -= amount;
 		if(this.health <= 0) {
 			this.alive = false;
+		}
+	}
+
+	attacked(attacker:Actor) {
+		this.damage(attacker.weapon.getAttackDamage());
+		if(attacker.weapon.type == "blade") {
+			this.effectImg = effect_slash;
 		}
 	}
 }
@@ -178,6 +191,7 @@ class Camera {
 
 class Weapon {
 	name : string;
+	type : string = "blade";
 	range : number = 1;
 	baseDamage : number;
 	getAttackDamage() {
@@ -209,7 +223,7 @@ function distance(x1:number, x2:number) {
 var player = new Player();
 var _home = new Home();
 var _mapone = new MapOne();
-var map = _home;
+var map = _mapone;
 var camera = new Camera();
 var tile_top : heart.HeartImage = null;
 var tile_zombie : heart.HeartImage = null;
@@ -217,6 +231,7 @@ var tile_wall : heart.HeartImage = null;
 var tile_idk : heart.HeartImage = null;
 var tile_fireplace : heart.HeartImage = null;
 var tile_door : heart.HeartImage = null;
+var effect_slash : heart.HeartImage = null;
 
 var SCREEN_WIDTH, SCREEN_HEIGHT, TILE_WIDTH, TILE_HEIGHT;
 
@@ -228,6 +243,7 @@ heart.preload = function() {
 	heart.graphics.newImage("assets/zombie.png", function(r) { tile_zombie = r; });
 	heart.graphics.newImage("assets/fire1.png", function(r) { tile_fireplace = r; });
 	heart.graphics.newImage("assets/door.png", function(r) { tile_door = r; });
+	heart.graphics.newImage("assets/slashdamage.png", function(r) { effect_slash = r; });
 }
 
 heart.load = function() {
@@ -248,16 +264,25 @@ function loadmap(mapobj) {
 	center();
 }
 
-heart.keydown = function(c) {
+function turn() {
 	for(var i = 0; i < map.width; i++) {
-		if(map.tiles[i][0] instanceof Zombie && i > 0 && !map.tiles[i-1][0].isSolid() && player.x != i-1) {
-			var e = <Enemy> map.tiles[i][0];
+		var t = map.tiles[i][0];
+
+		if(t instanceof Actor) (<Actor>t).turn();
+
+		// move enemies left towards player
+		if(t instanceof Enemy && i > 0 && !map.tiles[i-1][0].isSolid() && player.x != i-1) {
+			var e = <Enemy> t;
 			if(!e.alive) continue;
 			
-			map.pushTile(i-1, map.tiles[i][0]);
+			map.pushTile(i-1, t);
 			map.popTile(i);
 		}
 	}
+}
+
+heart.keydown = function(c) {
+	turn();
 
 	if(c == "right") {
 		if(player.x+1 < map.width && !map.isSolidAt(player.x+1)) {
@@ -278,7 +303,7 @@ heart.keydown = function(c) {
 				if(!e.alive) continue;
 
 				if(distance(i, player.x) <= player.weapon.range) {
-					e.damage(player.weapon.getAttackDamage());
+					e.attacked(player);
 					break;
 				}
 			}
@@ -329,10 +354,18 @@ heart.draw = function() {
 				heart.graphics.translate(pos.x+hw, pos.y+hh);
 				heart.graphics.rotate(90 * Math.PI/180);
 				heart.graphics.draw(e.getImage(), -hw, -hh);
+				var ef = e.getEffectImage();
+				if(ef) {
+					heart.graphics.draw(ef, -hw, -hh);
+				}
 				heart.graphics.pop();
 			}
 			else {
 				heart.graphics.draw(e.getImage(), camera.get(i*TILE_WIDTH), BASE_Y+TILE_HEIGHT);
+				var ef = e.getEffectImage();
+				if(ef) {
+					heart.graphics.draw(ef, camera.get(i*TILE_WIDTH), BASE_Y+TILE_HEIGHT);
+				}
 			}
 		}
 		else {

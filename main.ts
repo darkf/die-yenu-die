@@ -171,17 +171,20 @@ class Map {
 	}
 }
 
-class MapOne extends Map {
-	constructor() {
+class MapParser extends Map {
+	constructor(name, map) {
 		super();
-		this.name = "map1";
-		var map = "   $  %   $ $ %   $  ";
+		this.name = name;
 		this.tiles = emptyTiles(map.length);
-		for(var i = 0; i < map.length; i++) {
-			if(map[i] == '$') this.pushTile(i, new Zombie(i));
-			else if(map[i] == '%') this.pushTile(i, new UpgradeStation());
-		}
 		this.width = map.length;
+		for(var i = 0; i < map.length; i++) {
+			switch(map[i]) {
+				case '$': this.pushTile(i, new Zombie(i)); break;
+				case 'U': this.pushTile(i, new UpgradeStation()); break;
+				case 'F': this.pushTile(i, new Fireplace()); break;
+				case 'D': this.pushTile(i, new Door()); break;
+			}
+		}
 	}
 }
 
@@ -191,31 +194,6 @@ function emptyTiles(width:number) {
 		tiles[i] = [new Air()];
 	return tiles;
 }
-
-class Home extends Map {
-	constructor() {
-		super();
-		this.name = "home";
-		var map = "   F  U  D  ";
-		this.tiles = emptyTiles(map.length);
-		for(var i = 0; i < map.length; i++) {
-			if(map[i] == 'F') this.pushTile(i, new Fireplace());
-			else if(map[i] == 'U') this.pushTile(i, new UpgradeStation());
-			else if(map[i] == 'D') this.pushTile(i, new Door());
-		}
-		this.width = map.length;
-	}
-}
-
-/*class Map {
-	tiles : Tile[];
-	width : number;
-
-	constructor(builder:MapBuilder) {
-		this.tiles = builder.build();
-		this.width = this.tiles.length;
-	}
-}*/
 
 class Camera {
 	x : number = 0;
@@ -284,8 +262,8 @@ function distance(x1:number, x2:number) {
 }
 
 var player = new Player();
-var _home = new Home();
-var _mapone = new MapOne();
+var _home = new MapParser("home",     "   F  U  D  ");
+var _mapone = new MapParser("mapone", "   $  U   $ $ U   $  D ");
 var map = _mapone;
 var camera = new Camera();
 var tile_top : heart.HeartImage = null;
@@ -331,7 +309,7 @@ function loadmap(mapobj) {
 
 function turn() {
 	player.turn();
-	
+
 	for(var i = 0; i < map.width; i++) {
 		var t = map.tiles[i][0];
 

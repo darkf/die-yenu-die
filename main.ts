@@ -93,7 +93,7 @@ class Actor implements Tile {
 	}
 
 	consumeMana(amount : number) {
-		this.mana -= Math.max(amount, this.mana);
+		this.mana -= Math.min(amount, this.mana);
 	}
 
 	replinishMana(amount : number) {
@@ -106,6 +106,14 @@ class Actor implements Tile {
 		var ef = attacker.spell.getEffectImage();
 		if(ef)
 			this.effectImg = ef;
+	}
+
+	cast(victim:Actor) {
+		if(distance(this.x, victim.x) <= this.spell.range) {
+			this.consumeMana(this.spell.getManaCost());
+			victim.attacked(this);
+			console.log("someone casted " + this.spell.name);
+		}
 	}
 }
 
@@ -120,7 +128,8 @@ class Enemy extends Actor {
 
 		// see if we can attack the player
 		if(distance(this.x, player.x) <= this.spell.range) {
-				player.attacked(this);
+				//player.attacked(this);
+				this.cast(player);
 		}
 		else {
 			// move enemies left towards player
@@ -233,6 +242,10 @@ class Spell {
 
 	getAttackDamage() {
 		return this.baseDamage * this.level
+	}
+
+	getManaCost() {
+		return this.level/2 * 10
 	}
 }
 
@@ -365,7 +378,8 @@ heart.keydown = function(c) {
 				if(!e.alive) continue;
 
 				if(distance(i, player.x) <= player.spell.range) {
-					e.attacked(player);
+					//e.attacked(player);
+					player.cast(e);
 					break;
 				}
 			}

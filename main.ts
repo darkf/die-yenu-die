@@ -58,10 +58,12 @@ class Actor implements Tile {
 	mana : number = 100;
 	alive : bool = true;
 	spell : Spell = new Slash();
+	spells : Spell[] = [];
 	effectImg : heart.HeartImage = null;
 
 	constructor(x:number) {
 		this.x = x;
+		this.spells = [this.spell];
 	}
 
 	isSolid() { return this.alive }
@@ -237,6 +239,10 @@ class Spell {
 	range : number = 1;
 	level : number = 1;
 	baseDamage : number;
+
+	constructor(name:string) {
+		this.name = name;
+	}
 	
 	getEffectImage() : heart.HeartImage { return null }
 
@@ -251,8 +257,7 @@ class Spell {
 
 class Slash extends Spell {
 	constructor() {
-		super();
-		this.name = "Slash";
+		super("Slash");
 		this.type = "blade";
 		this.range = 1;
 		this.baseDamage = 25;
@@ -263,8 +268,7 @@ class Slash extends Spell {
 
 class Fireball extends Spell {
 	constructor() {
-		super();
-		this.name = "Fireball";
+		super("Fireball");
 		this.type = "fire";
 		this.range = 3;
 		this.baseDamage = 50;
@@ -281,6 +285,7 @@ class Player extends Actor {
 		super(0);
 		//this.spell = new Fireball();
 		this.spell.level = 2;
+		this.spells.push(new Fireball());
 	}
 
 	getImage() { return this.img }
@@ -314,14 +319,39 @@ class UpgradeState implements GameState {
 				return;
 
 			case "up":
-				//
+				this.index--;
+				if(this.index < 0) this.index = 0;
+				break;
+			case "down":
+				this.index++;
+				if(this.index >= player.spells.length) this.index--;
+				break;
+			case "u":
+			case " ":
+				// todo: confirmation screen
+				player.spells[this.index].level++;
+				console.log("upgraded spell " + player.spells[this.index].name + " to level " + player.spells[this.index].level);
+				popState();
 				break;
 		}
 	}
 
 	draw() {
+		//heart.graphics.print("todo: upgrade menu", SCREEN_WIDTH/2, SCREEN_HEIGHT/2);
+		var BASE_X = SCREEN_WIDTH/3;
+		var BASE_Y = SCREEN_HEIGHT/2;
 		heart.graphics.setColor(255, 255, 0);
-		heart.graphics.print("todo: upgrade menu", SCREEN_WIDTH/2, SCREEN_HEIGHT/2);
+		heart.graphics.print("What to upgrade?", BASE_X, BASE_Y - 10);
+
+		for(var i = 0; i < player.spells.length; i++) {
+			heart.graphics.rectangle("stroke", BASE_X, BASE_Y+i*25, 150, 20);
+			if(i == this.index) {
+				heart.graphics.setColor(200, 200, 0);
+				heart.graphics.rectangle("fill", BASE_X, BASE_Y+i*25, 150, 20);
+				heart.graphics.setColor(255, 255, 0);
+			}
+			heart.graphics.print(player.spells[i].name, BASE_X + 150/2 - player.spells[i].name.length*3, BASE_Y+12+i*25);
+		}
 	}
 }
 

@@ -53,7 +53,9 @@ class Wall implements Tile {
 class Actor implements Tile {
 	x : number;
 	maxHealth : number = 100;
+	maxMana : number = 100;
 	health : number = 100;
+	mana : number = 100;
 	alive : bool = true;
 	spell : Spell = new Slash();
 	effectImg : heart.HeartImage = null;
@@ -88,6 +90,15 @@ class Actor implements Tile {
 		if(this.health > this.maxHealth)
 			this.health = this.maxHealth;
 		//this.effectImg = effect_heal; // todo
+	}
+
+	consumeMana(amount : number) {
+		this.mana -= Math.max(amount, this.mana);
+	}
+
+	replinishMana(amount : number) {
+		this.mana += Math.min(this.maxMana-this.mana, amount);
+		//this.effectImg = effect_replinish; // todo
 	}
 
 	attacked(attacker:Actor) {
@@ -404,6 +415,16 @@ function drawActor(e:Actor, y:number) {
 	}
 }
 
+function drawBar(x, y, text, value, max=100, color=[200,0,0], width=125) {
+	var fillWidth = value/max*width;
+	heart.graphics.setColor(0, 0, 0);
+	heart.graphics.rectangle("stroke", x, y, width+1, 15+1);
+	heart.graphics.setColor(color[0], color[1], color[2]);
+	heart.graphics.rectangle("fill", x+1, y+1, fillWidth, 15);
+	heart.graphics.setColor(255, 255, 255);
+	heart.graphics.print(text, x + width/2 - text.length*3, y+11);
+}
+
 heart.draw = function() {
 	//heart.graphics.setColor(255, 255, 255)
 	//heart.graphics.rectangle("fill", player.x, player.y, 100, 100);
@@ -430,16 +451,9 @@ heart.draw = function() {
 
 	// draw UI
 
-	// health bar
-	var BAR_WIDTH = 125;
-	var BAR_FILL_WIDTH = (player.health/player.maxHealth)*BAR_WIDTH;
-	heart.graphics.setColor(0, 0, 0);
-	heart.graphics.rectangle("stroke", 10, 20, BAR_WIDTH+1, 15+1);
-	heart.graphics.setColor(225, 0, 0);
-	heart.graphics.rectangle("fill", 10+1, 20+1, BAR_FILL_WIDTH, 15);
-	heart.graphics.setColor(255, 255, 255);
-	var txt = "HP: " + player.health + "/" + player.maxHealth;
-	heart.graphics.print(txt, 10 + BAR_WIDTH/2 - (txt.length*3), 20+11);
+	// health and mana bar
+	drawBar(10, 20, "HP: " + player.health + "/" + player.maxHealth, player.health, player.maxHealth);
+	drawBar(10, 40, "MP: " + player.mana + "/" + player.maxMana, player.mana, player.maxMana, [0,0,200]);
 
 	// todo: lighting
 	/*

@@ -108,7 +108,7 @@ class Enemy extends Actor {
 		if(!this.alive) return;
 
 		// see if we can attack the player
-		if(distance(this.x-1, player.x) <= this.spell.range) {
+		if(distance(this.x, player.x) <= this.spell.range) {
 				player.attacked(this);
 		}
 		else {
@@ -215,12 +215,13 @@ class Spell {
 	name : string;
 	type : string;
 	range : number = 1;
+	level : number = 1;
 	baseDamage : number;
 	
 	getEffectImage() : heart.HeartImage { return null }
 
 	getAttackDamage() {
-		return this.baseDamage
+		return this.baseDamage * this.level
 	}
 }
 
@@ -230,7 +231,7 @@ class Slash extends Spell {
 		this.name = "Slash";
 		this.type = "blade";
 		this.range = 1;
-		this.baseDamage = 50;
+		this.baseDamage = 25;
 	}
 
 	getEffectImage() { return effect_slash }
@@ -242,7 +243,7 @@ class Fireball extends Spell {
 		this.name = "Fireball";
 		this.type = "fire";
 		this.range = 3;
-		this.baseDamage = 100;
+		this.baseDamage = 50;
 	}
 
 	getEffectImage() { return effect_fire }
@@ -254,7 +255,8 @@ class Player extends Actor {
 
 	constructor() {
 		super(0);
-		this.spell = new Fireball();
+		//this.spell = new Fireball();
+		this.spell.level = 2;
 	}
 
 	getImage() { return this.img }
@@ -274,7 +276,7 @@ function distance(x1:number, x2:number) {
 
 var player = new Player();
 var _home = new MapParser("home",     "   F  U  D  ");
-var _mapone = new MapParser("mapone", "   $  U   $ $ U   $  D ");
+var _mapone = new MapParser("mapone", "   $  U   $ $ U    D ");
 var map = _mapone;
 var camera = new Camera();
 var tile_top : heart.HeartImage = null;

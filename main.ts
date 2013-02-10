@@ -294,6 +294,125 @@ class Player extends Actor {
 	}
 }
 
+function pushState(state) { gameStates.unshift(state); }
+function popState() { return gameStates.shift(); }
+
+interface GameState {
+	keydown(c:string);
+	draw();
+}
+
+class UpgradeState implements GameState {
+	index : number = 0;
+
+	keydown(c:string) {
+		switch(c) {
+			case "escape":
+			case "backspace":
+			case "q":
+				popState();
+				return;
+
+			case "up":
+				//
+				break;
+		}
+	}
+
+	draw() {
+		heart.graphics.setColor(255, 255, 0);
+		heart.graphics.print("todo: upgrade menu", SCREEN_WIDTH/2, SCREEN_HEIGHT/2);
+	}
+}
+
+class PlayState implements GameState {
+	keydown(c:string) {
+		if(!player.alive) return;
+		turn();
+
+		if(c == "right") {
+			if(player.x+1 < map.width && !map.isSolidAt(player.x+1)) {
+				player.x++;
+				center();
+			}
+		}
+		else if(c == "left") {
+			if(player.x-1 >= 0 && !map.isSolidAt(player.x-1)) {
+				player.x--;
+				center();
+			}
+		}
+		else if(c == " ") {
+			for(var i = player.x; i < map.width; i++) {
+				if(map.tileAt(i) instanceof Enemy) {
+					var e = <Enemy> map.tileAt(i);
+					if(!e.alive) continue;
+
+					if(distance(i, player.x) <= player.spell.range) {
+						//e.attacked(player);
+						player.cast(e);
+						break;
+					}
+				}
+			}
+		}
+		else if(c == "up") {
+			if(map.tileAt(player.x) instanceof UpgradeStation) {
+				console.log("upgrade...");
+				pushState(new UpgradeState());
+				return;
+			}
+			else if(map.tileAt(player.x) instanceof Door) {
+				if(map.name == "home") {
+					loadmap(_mapone);
+				}
+				else {
+					loadmap(_home);
+				}
+			}
+		}
+	}
+
+	draw() {
+		//heart.graphics.setColor(255, 255, 255)
+		//heart.graphics.rectangle("fill", player.x, player.y, 100, 100);
+		var BASE_Y = SCREEN_HEIGHT / 2 - TILE_HEIGHT;
+
+		for(var i = 0; i < map.width; i++) {
+			heart.graphics.draw(tile_top, camera.get(i*TILE_WIDTH), BASE_Y);
+			heart.graphics.draw(tile_top, camera.get(i*TILE_WIDTH), BASE_Y + TILE_HEIGHT*2);
+		}
+
+		for(var i = 0; i < map.width; i++) {
+			/*if(map.tiles[i].getImage() != null)
+				heart.graphics.draw(map.tiles[i].getImage(), camera.get(i*TILE_WIDTH), BASE_Y+TILE_HEIGHT);
+			else
+				heart.graphics.draw(tile_wall, camera.get(i*TILE_WIDTH), BASE_Y+TILE_HEIGHT);*/
+			var t = map.tileAt(i);
+			if(t instanceof Actor)
+				drawActor(<Actor>t, BASE_Y);
+			else
+				heart.graphics.draw(t.getImage(), camera.get(i*TILE_WIDTH), BASE_Y+TILE_HEIGHT);
+		}
+
+		drawActor(player, BASE_Y);
+
+		// draw UI
+
+		// health and mana bar
+		drawBar(10, 20, "HP: " + player.health + "/" + player.maxHealth, player.health, player.maxHealth);
+		drawBar(10, 40, "MP: " + player.mana + "/" + player.maxMana, player.mana, player.maxMana, [0,0,200]);
+
+		// todo: lighting
+		/*
+		var g = heart.ctx.createRadialGradient(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 0, SCREEN_WIDTH/2+16, SCREEN_HEIGHT/2+16, 360);
+		g.addColorStop(0.10, "#ffffff");
+		g.addColorStop(0.8, "rgba(0, 0, 0, .5)");
+		heart.ctx.fillStyle = g;
+		heart.ctx.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);*/
+	}
+}
+
 function distance(x1:number, x2:number) {
 	return Math.abs(x1-x2);
 }
@@ -303,6 +422,7 @@ var _home = new MapParser("home",     "   F  U  D  ");
 var _mapone = new MapParser("mapone", "   $  U   $ $ U    D ");
 var map = _mapone;
 var camera = new Camera();
+var gameStates : GameState[] = [new PlayState()];
 var tile_top : heart.HeartImage = null;
 var tile_zombie : heart.HeartImage = null;
 var tile_wall : heart.HeartImage = null;
@@ -352,52 +472,10 @@ function turn() {
 
 		if(t instanceof Actor) (<Actor>t).turn();
 	}
-
 }
 
 heart.keydown = function(c) {
-	if(!player.alive) return;
-	turn();
-
-	if(c == "right") {
-		if(player.x+1 < map.width && !map.isSolidAt(player.x+1)) {
-			player.x++;
-			center();
-		}
-	}
-	else if(c == "left") {
-		if(player.x-1 >= 0 && !map.isSolidAt(player.x-1)) {
-			player.x--;
-			center();
-		}
-	}
-	else if(c == " ") {
-		for(var i = player.x; i < map.width; i++) {
-			if(map.tileAt(i) instanceof Enemy) {
-				var e = <Enemy> map.tileAt(i);
-				if(!e.alive) continue;
-
-				if(distance(i, player.x) <= player.spell.range) {
-					//e.attacked(player);
-					player.cast(e);
-					break;
-				}
-			}
-		}
-	}
-	else if(c == "up") {
-		if(map.tileAt(player.x) instanceof UpgradeStation) {
-			console.log("upgrade...");
-		}
-		else if(map.tileAt(player.x) instanceof Door) {
-			if(map.name == "home") {
-				loadmap(_mapone);
-			}
-			else {
-				loadmap(_home);
-			}
-		}
-	}
+	gameStates[0].keydown(c);
 }
 
 heart.update = function(dt) {
@@ -440,42 +518,7 @@ function drawBar(x, y, text, value, max=100, color=[200,0,0], width=125) {
 }
 
 heart.draw = function() {
-	//heart.graphics.setColor(255, 255, 255)
-	//heart.graphics.rectangle("fill", player.x, player.y, 100, 100);
-	var BASE_Y = SCREEN_HEIGHT / 2 - TILE_HEIGHT;
-
-	for(var i = 0; i < map.width; i++) {
-		heart.graphics.draw(tile_top, camera.get(i*TILE_WIDTH), BASE_Y);
-		heart.graphics.draw(tile_top, camera.get(i*TILE_WIDTH), BASE_Y + TILE_HEIGHT*2);
-	}
-
-	for(var i = 0; i < map.width; i++) {
-		/*if(map.tiles[i].getImage() != null)
-			heart.graphics.draw(map.tiles[i].getImage(), camera.get(i*TILE_WIDTH), BASE_Y+TILE_HEIGHT);
-		else
-			heart.graphics.draw(tile_wall, camera.get(i*TILE_WIDTH), BASE_Y+TILE_HEIGHT);*/
-		var t = map.tileAt(i);
-		if(t instanceof Actor)
-			drawActor(<Actor>t, BASE_Y);
-		else
-			heart.graphics.draw(t.getImage(), camera.get(i*TILE_WIDTH), BASE_Y+TILE_HEIGHT);
-	}
-
-	drawActor(player, BASE_Y);
-
-	// draw UI
-
-	// health and mana bar
-	drawBar(10, 20, "HP: " + player.health + "/" + player.maxHealth, player.health, player.maxHealth);
-	drawBar(10, 40, "MP: " + player.mana + "/" + player.maxMana, player.mana, player.maxMana, [0,0,200]);
-
-	// todo: lighting
-	/*
-	var g = heart.ctx.createRadialGradient(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 0, SCREEN_WIDTH/2+16, SCREEN_HEIGHT/2+16, 360);
-	g.addColorStop(0.10, "#ffffff");
-	g.addColorStop(0.8, "rgba(0, 0, 0, .5)");
-	heart.ctx.fillStyle = g;
-	heart.ctx.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);*/
+	gameStates[0].draw();
 
 	heart.graphics.setColor(255, 255, 0);
 	heart.graphics.print("fps: " + heart.timer.getFPS(), 10, 10);

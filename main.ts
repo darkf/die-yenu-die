@@ -107,14 +107,15 @@ class Enemy extends Actor {
 		super.turn();
 		if(!this.alive) return;
 
-		// move enemies left towards player
-		if(this.x > 0 && !map.tiles[this.x-1][0].isSolid() && player.x != this.x-1) {
-			this.move(this.x-1);
-		}
-
 		// see if we can attack the player
 		if(distance(this.x-1, player.x) <= this.spell.range) {
 				player.attacked(this);
+		}
+		else {
+			// move enemies left towards player
+			if(this.x > 0 && !map.tiles[this.x-1][0].isSolid() && player.x != this.x-1) {
+				this.move(this.x-1);
+			}
 		}
 	}
 }

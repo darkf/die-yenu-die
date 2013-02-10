@@ -52,6 +52,7 @@ class Wall implements Tile {
 
 class Actor implements Tile {
 	x : number;
+	maxHealth : number = 100;
 	health : number = 100;
 	alive : bool = true;
 	spell : Spell = new Slash();
@@ -80,6 +81,13 @@ class Actor implements Tile {
 		if(this.health <= 0) {
 			this.alive = false;
 		}
+	}
+
+	heal(amount:number) {
+		this.health += amount;
+		if(this.health > this.maxHealth)
+			this.health = this.maxHealth;
+		//this.effectImg = effect_heal; // todo
 	}
 
 	attacked(attacker:Actor) {
@@ -416,6 +424,19 @@ heart.draw = function() {
 	}
 
 	drawActor(player, BASE_Y);
+
+	// draw UI
+
+	// health bar
+	var BAR_WIDTH = 125;
+	var BAR_FILL_WIDTH = (player.health/player.maxHealth)*BAR_WIDTH;
+	heart.graphics.setColor(0, 0, 0);
+	heart.graphics.rectangle("stroke", 10, 20, BAR_WIDTH+1, 15+1);
+	heart.graphics.setColor(225, 0, 0);
+	heart.graphics.rectangle("fill", 10+1, 20+1, BAR_FILL_WIDTH, 15);
+	heart.graphics.setColor(255, 255, 255);
+	var txt = "HP: " + player.health + "/" + player.maxHealth;
+	heart.graphics.print(txt, 10 + BAR_WIDTH/2 - (txt.length*3), 20+11);
 
 	// todo: lighting
 	/*

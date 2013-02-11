@@ -68,6 +68,8 @@ class Actor implements Tile {
 		this.spells = newSpellList();
 		this.spell = this.spells[0];
 		this.level = level;
+		this.maxHealth = 100 + 5*this.level
+		this.health = this.maxHealth
 	}
 
 	isSolid() { return this.alive }
@@ -112,7 +114,7 @@ class Actor implements Tile {
 	}
 
 	attacked(attacker:Actor) {
-		this.damage(attacker.spell.getAttackDamage());
+		this.damage(attacker.getAttackDamage());
 		var ef = attacker.spell.getEffectImage();
 		if(ef)
 			this.effectImg = ef;
@@ -137,6 +139,10 @@ class Actor implements Tile {
 	hasSpell(name:string) {
 		var spell = this.getSpell(name);
 		return spell != null && spell.level > 0
+	}
+
+	getAttackDamage() {
+		return this.spell.getAttackDamage() + Math.round(2.5*this.level)
 	}
 }
 
@@ -233,14 +239,14 @@ class Map {
 }
 
 class MapParser extends Map {
-	constructor(name, map) {
+	constructor(name, map, level=1) {
 		super();
 		this.name = name;
 		this.tiles = emptyTiles(map.length);
 		this.width = map.length;
 		for(var i = 0; i < map.length; i++) {
 			switch(map[i]) {
-				case '$': this.pushTile(i, new Zombie(i)); break;
+				case '$': this.pushTile(i, new Zombie(i, level)); break;
 				case 'U': this.pushTile(i, new UpgradeStation()); break;
 				case 'F': this.pushTile(i, new Fireplace()); break;
 				case 'D': this.pushTile(i, new Door()); break;
@@ -484,7 +490,9 @@ class PlayState implements GameState {
 			else if(map.tileAt(player.x) instanceof Door) {
 				if(map.name == "home") {
 					// home -> new random dungeon
-					loadmap(new MapParser("randumb", getRandomMap()));
+					dungeonLevel++;
+					console.log("dungeon level = " + dungeonLevel);
+					loadmap(new MapParser("randumb", getRandomMap(), dungeonLevel));
 				}
 				else {
 					// anywhere -> home
@@ -549,6 +557,7 @@ var player = new Player();
 var _home = new MapParser("home",     "   F  U  D  ");
 var _mapone = new MapParser("mapone", "  U $      $ $ U    D ");
 var map = _mapone;
+var dungeonLevel = 0;
 var camera = new Camera();
 var gameStates : GameState[] = [new PlayState()];
 var tile_top : heart.HeartImage = null;

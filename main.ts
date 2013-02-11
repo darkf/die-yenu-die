@@ -440,6 +440,22 @@ class UpgradeState implements GameState {
 class PlayState implements GameState {
 	keydown(c:string) {
 		if(!player.alive) return;
+
+		if(c == " ") {
+			for(var i = player.x; i < map.width; i++) {
+				if(map.tileAt(i) instanceof Enemy) {
+					var e = <Enemy> map.tileAt(i);
+					if(!e.alive) continue;
+
+					if(distance(i, player.x) <= player.spell.range) {
+						//e.attacked(player);
+						player.cast(e);
+						break;
+					}
+				}
+			}
+		}
+
 		turn();
 
 		if(c == "right") {
@@ -452,20 +468,6 @@ class PlayState implements GameState {
 			if(player.x-1 >= 0 && !map.isSolidAt(player.x-1)) {
 				player.x--;
 				center();
-			}
-		}
-		else if(c == " ") {
-			for(var i = player.x; i < map.width; i++) {
-				if(map.tileAt(i) instanceof Enemy) {
-					var e = <Enemy> map.tileAt(i);
-					if(!e.alive) continue;
-
-					if(distance(i, player.x) <= player.spell.range) {
-						//e.attacked(player);
-						player.cast(e);
-						break;
-					}
-				}
 			}
 		}
 		else if(c == "up") {

@@ -59,13 +59,14 @@ class Actor implements Tile {
 	level : number;
 	baseXPDrop : number = 25;
 	alive : bool = true;
-	spell : Spell = new Slash();
+	spell : Spell = null;
 	spells : Spell[] = [];
 	effectImg : heart.HeartImage = null;
 
 	constructor(x:number, level:number=1) {
 		this.x = x;
-		this.spells = [this.spell];
+		this.spells = newSpellList();
+		this.spell = this.spells[0];
 		this.level = level;
 	}
 
@@ -123,6 +124,19 @@ class Actor implements Tile {
 			victim.attacked(this);
 			console.log("someone casted " + this.spell.name);
 		}
+	}
+
+	getSpell(name:string) : Spell {
+		for(var i = 0; i < this.spells.length; i++) {
+			if(this.spells[i].name == name)
+				return this.spells[i]
+		}
+		return null;
+	}
+
+	hasSpell(name:string) {
+		var spell = this.getSpell(name);
+		return spell != null && spell.level > 0
 	}
 }
 
@@ -280,7 +294,7 @@ class Spell {
 	name : string;
 	type : string;
 	range : number = 1;
-	level : number = 1;
+	level : number = 0;
 	baseDamage : number;
 
 	constructor(name:string) {
@@ -302,6 +316,7 @@ class Slash extends Spell {
 	constructor() {
 		super("Slash");
 		this.type = "blade";
+		this.level = 1; // start with it by default
 		this.range = 1;
 		this.baseDamage = 25;
 	}
@@ -320,6 +335,10 @@ class Fireball extends Spell {
 	getEffectImage() { return effect_fire }
 }
 
+function newSpellList() : Spell[] {
+	return [new Slash(), new Fireball()];
+}
+
 class Player extends Actor {
 	x : number = 0;
 	img : heart.HeartImage = null;
@@ -328,9 +347,7 @@ class Player extends Actor {
 
 	constructor() {
 		super(0);
-		//this.spell = new Fireball();
-		this.spell.level = 2;
-		this.spells.push(new Fireball());
+		this.getSpell("Slash").level = 2;
 	}
 
 	getImage() { return this.img }
@@ -388,9 +405,10 @@ class UpgradeState implements GameState {
 			case " ":
 				// todo: confirmation screen
 				if(player.upgradePoints > 0) {
-					player.spells[this.index].level++;
+					var spell = player.spells[this.index];
+					spell.level++;
 					player.upgradePoints--;
-					console.log("upgraded spell " + player.spells[this.index].name + " to level " + player.spells[this.index].level);
+					console.log("upgraded spell " + spell.name + " to level " + spell.level);
 					popState();
 				}
 				break;
@@ -398,11 +416,10 @@ class UpgradeState implements GameState {
 	}
 
 	draw() {
-		//heart.graphics.print("todo: upgrade menu", SCREEN_WIDTH/2, SCREEN_HEIGHT/2);
 		var BASE_X = SCREEN_WIDTH/3;
 		var BASE_Y = SCREEN_HEIGHT/2;
 		heart.graphics.setColor(255, 255, 0);
-		heart.graphics.print("What to upgrade? You have " + player.upgradePoints + " points", BASE_X, BASE_Y - 10);
+		heart.graphics.print("What to buy? You have " + player.upgradePoints + " points", BASE_X, BASE_Y - 10);
 
 		for(var i = 0; i < player.spells.length; i++) {
 			heart.graphics.rectangle("stroke", BASE_X, BASE_Y+i*25, 150, 20);
@@ -411,7 +428,11 @@ class UpgradeState implements GameState {
 				heart.graphics.rectangle("fill", BASE_X, BASE_Y+i*25, 150, 20);
 				heart.graphics.setColor(255, 255, 0);
 			}
-			heart.graphics.print(player.spells[i].name, BASE_X + 150/2 - player.spells[i].name.length*3, BASE_Y+12+i*25);
+			var spell = player.spells[i];
+			var txt = spell.name;
+			if(spell.level == 0) txt += " (learn)";
+			else txt += " ("+spell.level+")";
+			heart.graphics.print(txt, BASE_X + 150/2 - spell.name.length*3, BASE_Y+12+i*25);
 		}
 	}
 }
@@ -464,6 +485,7 @@ class PlayState implements GameState {
 					loadmap(new MapParser("randumb", getRandomMap()));
 				}
 				else {
+					// anywhere -> home
 					loadmap(_home);
 				}
 			}

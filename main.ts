@@ -56,6 +56,7 @@ class Actor implements Tile {
 	maxMana : number = 100;
 	health : number = 100;
 	mana : number = 100;
+	xpDropped : number = 25;
 	alive : bool = true;
 	spell : Spell = new Slash();
 	spells : Spell[] = [];
@@ -80,11 +81,16 @@ class Actor implements Tile {
 		this.effectImg = null;
 	}
 
+	die() {
+		this.alive = false;
+		player.gainXP(this.xpDropped);
+		// todo: drops
+	}
+
 	damage(amount:number) {
 		this.health -= amount;
-		if(this.health <= 0) {
-			this.alive = false;
-		}
+		if(this.health <= 0)
+			this.die();
 	}
 
 	heal(amount:number) {
@@ -280,6 +286,9 @@ class Fireball extends Spell {
 class Player extends Actor {
 	x : number = 0;
 	img : heart.HeartImage = null;
+	xp : number = 975;
+	level : number = 1;
+	upgradePoints : number = 1;
 
 	constructor() {
 		super(0);
@@ -296,6 +305,19 @@ class Player extends Actor {
 		if(!this.alive) {
 			console.log("You are dead...");
 		}
+	}
+
+	gainXP(amount:number) {
+		this.xp += amount;
+		if(this.xp >= this.getNextUpgradeXP()) {
+			this.level++;
+			this.upgradePoints++;
+			console.log("level up");
+		}
+	}
+
+	getNextUpgradeXP() {
+		return Math.floor(Math.pow(this.level,1.5) * 1000);
 	}
 }
 
@@ -329,9 +351,12 @@ class UpgradeState implements GameState {
 			case "u":
 			case " ":
 				// todo: confirmation screen
-				player.spells[this.index].level++;
-				console.log("upgraded spell " + player.spells[this.index].name + " to level " + player.spells[this.index].level);
-				popState();
+				if(player.upgradePoints > 0) {
+					player.spells[this.index].level++;
+					player.upgradePoints--;
+					console.log("upgraded spell " + player.spells[this.index].name + " to level " + player.spells[this.index].level);
+					popState();
+				}
 				break;
 		}
 	}
@@ -341,7 +366,7 @@ class UpgradeState implements GameState {
 		var BASE_X = SCREEN_WIDTH/3;
 		var BASE_Y = SCREEN_HEIGHT/2;
 		heart.graphics.setColor(255, 255, 0);
-		heart.graphics.print("What to upgrade?", BASE_X, BASE_Y - 10);
+		heart.graphics.print("What to upgrade? You have " + player.upgradePoints + " points", BASE_X, BASE_Y - 10);
 
 		for(var i = 0; i < player.spells.length; i++) {
 			heart.graphics.rectangle("stroke", BASE_X, BASE_Y+i*25, 150, 20);
@@ -430,8 +455,10 @@ class PlayState implements GameState {
 		// draw UI
 
 		// health and mana bar
+		var xp = player.getNextUpgradeXP();
 		drawBar(10, 20, "HP: " + player.health + "/" + player.maxHealth, player.health, player.maxHealth);
 		drawBar(10, 40, "MP: " + player.mana + "/" + player.maxMana, player.mana, player.maxMana, [0,0,200]);
+		drawBar(10, 60, "XP: " + player.xp + "/" + xp, player.xp, xp, [0,200,0]);
 
 		// todo: lighting
 		/*

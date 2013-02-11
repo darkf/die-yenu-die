@@ -453,6 +453,11 @@ class PlayState implements GameState {
 				pushState(new UpgradeState());
 				return;
 			}
+			else if(map.tileAt(player.x) instanceof Fireplace) {
+				// heal up
+				player.heal(player.maxHealth-player.health);
+				player.replinishMana(player.maxMana-player.mana);
+			}
 			else if(map.tileAt(player.x) instanceof Door) {
 				if(map.name == "home") {
 					// home -> new random dungeon

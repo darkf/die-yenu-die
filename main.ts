@@ -242,6 +242,33 @@ function emptyTiles(width:number) {
 	return tiles;
 }
 
+function getRandomMap() {
+	var width = 16 + Math.round(Math.random()*10);
+	//if(width % 2 != 0) width++; // make width always even
+	//var doorX = width - 1 - Math.floor(Math.random()*(width/4));
+	var doorX = width-2;
+	var maps = " ";
+	var randMap = {" ": 0.875, "$": 0.125};
+
+	function getRandomTile() : string {
+		var r = Math.random();
+		var sum = 0;
+		for(var k in randMap) {
+			sum += randMap[k];
+			if(r < sum)
+				return k;
+		}
+		console.log("???");
+	}
+
+	for(var i = 1; i < width; i++) {
+		if(i == doorX) maps += "D";
+		else maps += getRandomTile();
+	}
+
+	return maps;
+}
+
 class Camera {
 	x : number = 0;
 	get(x : number) {
@@ -428,12 +455,18 @@ class PlayState implements GameState {
 			}
 			else if(map.tileAt(player.x) instanceof Door) {
 				if(map.name == "home") {
-					loadmap(_mapone);
+					// home -> new random dungeon
+					loadmap(new MapParser("randumb", getRandomMap()));
 				}
 				else {
 					loadmap(_home);
 				}
 			}
+		}
+		else if(c == "i") {
+			// debug - generate new random dungeon
+			var rmap = getRandomMap();
+			loadmap(new MapParser("randumb", rmap));
 		}
 	}
 

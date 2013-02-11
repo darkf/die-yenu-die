@@ -56,15 +56,17 @@ class Actor implements Tile {
 	maxMana : number = 100;
 	health : number = 100;
 	mana : number = 100;
-	xpDropped : number = 25;
+	level : number;
+	baseXPDrop : number = 25;
 	alive : bool = true;
 	spell : Spell = new Slash();
 	spells : Spell[] = [];
 	effectImg : heart.HeartImage = null;
 
-	constructor(x:number) {
+	constructor(x:number, level:number=1) {
 		this.x = x;
 		this.spells = [this.spell];
+		this.level = level;
 	}
 
 	isSolid() { return this.alive }
@@ -83,7 +85,6 @@ class Actor implements Tile {
 
 	die() {
 		this.alive = false;
-		player.gainXP(this.xpDropped);
 		// todo: drops
 	}
 
@@ -126,8 +127,17 @@ class Actor implements Tile {
 }
 
 class Enemy extends Actor {
-	constructor(x:number) {
-		super(x);
+	constructor(x:number, level:number=1) {
+		super(x, level);
+	}
+
+	getXPDropped() {
+		return this.level * this.baseXPDrop
+	}
+
+	die() {
+		super.die();
+		player.gainXP(this.getXPDropped());
 	}
 
 	turn() {
@@ -287,7 +297,6 @@ class Player extends Actor {
 	x : number = 0;
 	img : heart.HeartImage = null;
 	xp : number = 975;
-	level : number = 1;
 	upgradePoints : number = 1;
 
 	constructor() {
@@ -476,7 +485,7 @@ function distance(x1:number, x2:number) {
 
 var player = new Player();
 var _home = new MapParser("home",     "   F  U  D  ");
-var _mapone = new MapParser("mapone", "   $  U   $ $ U    D ");
+var _mapone = new MapParser("mapone", "  U $      $ $ U    D ");
 var map = _mapone;
 var camera = new Camera();
 var gameStates : GameState[] = [new PlayState()];

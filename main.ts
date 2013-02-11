@@ -532,6 +532,8 @@ class PlayState implements GameState {
 		drawActor(player, BASE_Y);
 
 		// draw UI
+		heart.graphics.setColor(255, 255, 0);
+		heart.graphics.print("level " + dungeonLevel, 10, 90);
 
 		// health and mana bar
 		var xp = player.getNextUpgradeXP();
@@ -649,7 +651,7 @@ function drawBar(x, y, text, value, max=100, color=[200,0,0], width=125) {
 	heart.graphics.setColor(0, 0, 0);
 	heart.graphics.rectangle("stroke", x, y, width+1, 15+1);
 	heart.graphics.setColor(color[0], color[1], color[2]);
-	heart.graphics.rectangle("fill", x+1, y+1, fillWidth, 15);
+	heart.graphics.rectangle("fill", x+1, y+1, fillWidth-1, 15-1);
 	heart.graphics.setColor(255, 255, 255);
 	heart.graphics.print(text, x + width/2 - text.length*3, y+11);
 }

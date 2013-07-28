@@ -462,17 +462,19 @@ class PlayState implements GameState {
 					}
 				}
 			}
+
+			turn();
 		}
 
-		turn();
-
 		if(c == "right") {
+			turn();
 			if(player.x+1 < map.width && !map.isSolidAt(player.x+1)) {
 				player.x++;
 				center();
 			}
 		}
 		else if(c == "left") {
+			turn();
 			if(player.x-1 >= 0 && !map.isSolidAt(player.x-1)) {
 				player.x--;
 				center();

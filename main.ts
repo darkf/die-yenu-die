@@ -211,6 +211,7 @@ class Map {
 }
 
 // Parses a simple text format into a tilemap
+
 class MapParser extends Map {
 	constructor(name, map, level=1) {
 		super();
@@ -267,6 +268,10 @@ class Camera {
 	x : number = 0;
 	get(x : number) {
 		return x - this.x;
+	}
+	center(around_tile:number) {
+		// center the camera
+		this.x = around_tile*TILE_WIDTH - SCREEN_WIDTH/2;
 	}
 }
 
@@ -452,7 +457,7 @@ class PlayState implements GameState {
 			turn();
 			if(player.x+1 < map.width && !map.isSolidAt(player.x+1)) {
 				player.x++;
-				center();
+				camera.center(player.x);
 			}
 		}
 		// go left
@@ -460,7 +465,7 @@ class PlayState implements GameState {
 			turn();
 			if(player.x-1 >= 0 && !map.isSolidAt(player.x-1)) {
 				player.x--;
-				center();
+				camera.center(player.x);
 			}
 		}
 		// use
@@ -575,19 +580,14 @@ heart.load = function() {
 	SCREEN_WIDTH = heart.graphics.getWidth();
 	SCREEN_HEIGHT = heart.graphics.getHeight();
 	heart.timer.setTargetFPS(20);
-	center();
-}
-
-function center() {
-	// center the camera
-	camera.x = player.x*TILE_WIDTH - SCREEN_WIDTH/2;
+	camera.center(player.x);
 }
 
 function loadmap(mapobj) {
 	// load mapobj into the world
 	player.x = 0;
 	map = mapobj;
-	center();
+	camera.center(player.x);
 }
 
 function turn() {

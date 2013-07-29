@@ -1,1 +1,1 @@
-@tsc main.ts --out main.js
+@tsc --out main.js lib\heart.d.ts main.ts

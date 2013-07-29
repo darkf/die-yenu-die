@@ -1,1 +1,1 @@
-tsc main.ts --out main.js
+tsc --out main.js heart.d.ts main.ts

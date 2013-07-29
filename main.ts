@@ -1,3 +1,5 @@
+// Base tile interface. All tiles implement this.
+
 interface Tile {
 	getImage() : heart.HeartImage;
 	isSolid() : bool;
@@ -7,6 +9,8 @@ class Wall implements Tile {
 	getImage() { return tile_top; }
 	isSolid() { return true; }
 }
+
+// Base actor class. Players and enemies inherit from this.
 
 class Actor implements Tile {
 	x : number;
@@ -106,6 +110,8 @@ class Actor implements Tile {
 	}
 }
 
+// Base enemy class
+
 class Enemy extends Actor {
 	constructor(x:number, level:number=1) {
 		super(x, level);
@@ -138,6 +144,8 @@ class Enemy extends Actor {
 	}
 }
 
+// Enemies in the game
+
 class Zombie extends Enemy {
 	getImage() { return tile_zombie; }
 }
@@ -161,6 +169,10 @@ class Air implements Tile {
 	getImage() : heart.HeartImage { return tile_wall; }
 	isSolid() { return false }
 }
+
+// The game world map
+// Tile cells are actually stacks of tiles, so that when another tile moves into it,
+// such as an enemy, it doesn't remove it, just sits on top of it.
 
 class Map {
 	tiles : Tile[][];
@@ -198,6 +210,7 @@ class Map {
 	}
 }
 
+// Parses a simple text format into a tilemap
 class MapParser extends Map {
 	constructor(name, map, level=1) {
 		super();
@@ -216,6 +229,7 @@ class MapParser extends Map {
 }
 
 function emptyTiles(width:number) {
+	// Generate a list of `width` empty Air tiles
 	var tiles : Tile[][] = [];
 	for(var i = 0; i < width; i++)
 		tiles[i] = [new Air()];
@@ -340,22 +354,28 @@ class Player extends Actor {
 	}
 }
 
-function pushState(state) { gameStates.unshift(state); }
-function popState() { return gameStates.shift(); }
+// Game States are basically scenes. The game uses a game state stack where multiple
+// scenes can stack upon eachother. The play state (i.e. the world) is usually the
+// bottom-most state. On top of it are usually menu states, like UpgradeState.
 
 interface GameState {
 	keydown(c:string);
 	draw();
 }
 
+function pushState(state) { gameStates.unshift(state); }
+function popState() { return gameStates.shift(); }
+
+// The upgrade menu
 class UpgradeState implements GameState {
-	index : number = 0;
+	index : number = 0; // index of the menu item
 
 	keydown(c:string) {
 		switch(c) {
 			case "escape":
 			case "backspace":
 			case "q":
+				// back out of the menu
 				popState();
 				return;
 
@@ -369,6 +389,7 @@ class UpgradeState implements GameState {
 				break;
 			case "u":
 			case " ":
+				// buy an upgade
 				// todo: confirmation screen
 				if(player.upgradePoints > 0) {
 					var spell = player.spells[this.index];
@@ -405,8 +426,10 @@ class UpgradeState implements GameState {
 
 class PlayState implements GameState {
 	keydown(c:string) {
+		// don't do anything if the player is dead
 		if(!player.alive) return;
 
+		// space (attack)
 		if(c == " ") {
 			for(var i = player.x; i < map.width; i++) {
 				if(map.tileAt(i) instanceof Enemy) {
@@ -424,6 +447,7 @@ class PlayState implements GameState {
 			turn();
 		}
 
+		// go right
 		if(c == "right") {
 			turn();
 			if(player.x+1 < map.width && !map.isSolidAt(player.x+1)) {
@@ -431,6 +455,7 @@ class PlayState implements GameState {
 				center();
 			}
 		}
+		// go left
 		else if(c == "left") {
 			turn();
 			if(player.x-1 >= 0 && !map.isSolidAt(player.x-1)) {
@@ -438,6 +463,7 @@ class PlayState implements GameState {
 				center();
 			}
 		}
+		// use
 		else if(c == "up") {
 			if(map.tileAt(player.x) instanceof UpgradeStation) {
 				console.log("upgrade...");
@@ -462,6 +488,7 @@ class PlayState implements GameState {
 				}
 			}
 		}
+		// debug key to load a new randomly generated map
 		else if(c == "i") {
 			// debug - generate new random dungeon
 			var rmap = getRandomMap();
@@ -470,8 +497,6 @@ class PlayState implements GameState {
 	}
 
 	draw() {
-		//heart.graphics.setColor(255, 255, 255)
-		//heart.graphics.rectangle("fill", player.x, player.y, 100, 100);
 		var BASE_Y = SCREEN_HEIGHT / 2 - TILE_HEIGHT;
 
 		for(var i = 0; i < map.width; i++) {
@@ -480,10 +505,6 @@ class PlayState implements GameState {
 		}
 
 		for(var i = 0; i < map.width; i++) {
-			/*if(map.tiles[i].getImage() != null)
-				heart.graphics.draw(map.tiles[i].getImage(), camera.get(i*TILE_WIDTH), BASE_Y+TILE_HEIGHT);
-			else
-				heart.graphics.draw(tile_wall, camera.get(i*TILE_WIDTH), BASE_Y+TILE_HEIGHT);*/
 			var t = map.tileAt(i);
 			if(t instanceof Actor)
 				drawActor(<Actor>t, BASE_Y);
@@ -491,6 +512,7 @@ class PlayState implements GameState {
 				heart.graphics.draw(t.getImage(), camera.get(i*TILE_WIDTH), BASE_Y+TILE_HEIGHT);
 		}
 
+		// draw the player
 		drawActor(player, BASE_Y);
 
 		// draw UI
@@ -524,6 +546,7 @@ var map = _mapone;
 var dungeonLevel = 0;
 var camera = new Camera();
 var gameStates : GameState[] = [new PlayState()];
+// todo: these assets should probably be in a dictionary
 var tile_top : heart.HeartImage = null;
 var tile_zombie : heart.HeartImage = null;
 var tile_wall : heart.HeartImage = null;
@@ -556,10 +579,12 @@ heart.load = function() {
 }
 
 function center() {
+	// center the camera
 	camera.x = player.x*TILE_WIDTH - SCREEN_WIDTH/2;
 }
 
 function loadmap(mapobj) {
+	// load mapobj into the world
 	player.x = 0;
 	map = mapobj;
 	center();
@@ -580,7 +605,7 @@ heart.keydown = function(c) {
 }
 
 heart.update = function(dt) {
-	//player.x += player.speed * dt;
+	// any animation-related code should go here
 }
 
 function drawActor(e:Actor, y:number) {

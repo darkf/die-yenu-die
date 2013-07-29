@@ -4,12 +4,12 @@ declare module heart {
 	export function attach(canvasID:string) : void;
 
 	// overridable callbacks
-	export function preload() : void;
-	export function load() : void;
-	export function keydown(char:string) : void;
-	export function keyup(char:string) : void;
-	export function update(dt:number) : void;
-	export function draw() : void;
+	export var preload : () => void;
+	export var load : () => void;
+	export var keydown : (char:string) => void;
+	export var keyup : (char:string) => void;
+	export var update : (dt:number) => void;
+	export var draw : () => void;
 
 	export class HeartImage {
 		img : HTMLImageElement;

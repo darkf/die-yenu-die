@@ -1,3 +1,8 @@
+// Copyright (c) 2013 the Die, Yenu, Die! authors (see AUTHORS.txt for a full list)
+// Licensed under the terms of the zlib license. See LICENSE.txt for the full license text.
+
+// This is the main file. It handles setting up the game and loading assets.
+
 class Camera {
 	x : number = 0;
 	get(x : number) {

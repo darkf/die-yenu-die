@@ -1,3 +1,6 @@
+// Copyright (c) 2013 the Die, Yenu, Die! authors (see AUTHORS.txt for a full list)
+// Licensed under the terms of the zlib license. See LICENSE.txt for the full license text.
+
 // The upgrade (altar) menu state
 
 class UpgradeState implements GameState {

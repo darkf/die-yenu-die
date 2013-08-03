@@ -1,3 +1,6 @@
+// Copyright (c) 2013 the Die, Yenu, Die! authors (see AUTHORS.txt for a full list)
+// Licensed under the terms of the zlib license. See LICENSE.txt for the full license text.
+
 // The game world map
 // Tile cells are actually stacks of tiles, so that when another tile moves into it,
 // such as an enemy, it doesn't remove it, just sits on top of it.

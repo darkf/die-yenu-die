@@ -1,3 +1,6 @@
+// Copyright (c) 2013 the Die, Yenu, Die! authors (see AUTHORS.txt for a full list)
+// Licensed under the terms of the zlib license. See LICENSE.txt for the full license text.
+
 // Contains code for tiles
 // The tile_* assets are unfortunately defined in `main.ts` for now.
 

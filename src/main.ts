@@ -48,19 +48,20 @@ heart.load = function() {
 	heart.attach("cnv");
 	SCREEN_WIDTH = heart.graphics.getWidth();
 	SCREEN_HEIGHT = heart.graphics.getHeight();
-	heart.timer.setTargetFPS(20);
+	heart.timer.setTargetFPS(20); // set a fixed 20 FPS
 	camera.center(player.x);
 }
 
 function loadmap(mapobj) {
-	// load mapobj into the world
+	// load a new map (mapobj) into the world
 	player.x = 0;
 	map = mapobj;
 	camera.center(player.x);
 }
 
+// advance one turn
 function turn() {
-	player.turn();
+	player.turn(); // player goes first
 
 	for(var i = 0; i < map.width; i++) {
 		var t = map.tiles[i][0];
@@ -69,14 +70,7 @@ function turn() {
 	}
 }
 
-heart.keydown = function(c) {
-	gameStates[0].keydown(c);
-}
-
-heart.update = function(dt) {
-	// any animation-related code should go here
-}
-
+// drawn an actor to the screen
 function drawActor(e:Actor, y:number) {
 	if(!e.alive) {
 		heart.graphics.push();
@@ -102,6 +96,7 @@ function drawActor(e:Actor, y:number) {
 	}
 }
 
+// draw a progress bar to the screen
 function drawBar(x, y, text, value, max=100, color=[200,0,0], width=125) {
 	var fillWidth = value/max*width;
 	heart.graphics.setColor(0, 0, 0);
@@ -110,6 +105,16 @@ function drawBar(x, y, text, value, max=100, color=[200,0,0], width=125) {
 	heart.graphics.rectangle("fill", x+1, y+1, fillWidth-1, 15-1);
 	heart.graphics.setColor(255, 255, 255);
 	heart.graphics.print(text, x + width/2 - text.length*3, y+11);
+}
+
+// heart.js callbacks to implement game logic and drawing
+
+heart.keydown = function(c) {
+	gameStates[0].keydown(c);
+}
+
+heart.update = function(dt) {
+	// any animation-related code should go here
 }
 
 heart.draw = function() {

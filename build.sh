@@ -1,1 +1,1 @@
-tsc --out main.js lib/heart.d.ts main.ts
+tsc --out main.js lib/heart.d.ts src/main.ts

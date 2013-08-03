@@ -1,15 +1,3 @@
-// Base tile interface. All tiles implement this.
-
-interface Tile {
-	getImage() : heart.HeartImage;
-	isSolid() : bool;
-}
-
-class Wall implements Tile {
-	getImage() { return tile_top; }
-	isSolid() { return true; }
-}
-
 // Base enemy class
 
 class Enemy extends Actor {
@@ -48,26 +36,6 @@ class Enemy extends Actor {
 
 class Zombie extends Enemy {
 	getImage() { return tile_zombie; }
-}
-
-class UpgradeStation implements Tile {
-	getImage() { return tile_idk; }
-	isSolid() { return false }
-}
-
-class Fireplace implements Tile {
-	getImage() { return tile_fireplace; }
-	isSolid() { return false }
-}
-
-class Door implements Tile {
-	getImage() { return tile_door; }
-	isSolid() { return false }
-}
-
-class Air implements Tile {
-	getImage() : heart.HeartImage { return tile_wall; }
-	isSolid() { return false }
 }
 
 // The game world map
@@ -451,7 +419,7 @@ var map = _mapone;
 var dungeonLevel = 0;
 var camera = new Camera();
 var gameStates : GameState[] = [new PlayState()];
-// todo: these assets should probably be in a dictionary
+// TODO: we should probably have an asset pipeline (like a dictionary with getAsset() or something)
 var tile_top : heart.HeartImage = null;
 var tile_zombie : heart.HeartImage = null;
 var tile_wall : heart.HeartImage = null;

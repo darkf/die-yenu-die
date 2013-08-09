@@ -22,6 +22,7 @@ var player = new Player();
 var _home = new MapParser("home",     "   F  U  D  ");
 var _mapone = new MapParser("mapone", "  U $      $ $ U    D ");
 var map = _mapone;
+var events = new EventManager();
 var dungeonLevel = 0;
 var camera = new Camera();
 var gameStates : GameState[] = [new PlayState()];
@@ -119,6 +120,7 @@ heart.keydown = function(c) {
 }
 
 heart.update = function(dt) {
+	events.handleAll();
 	// any animation-related code should go here
 }
 
